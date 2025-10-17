@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Cosmetics Inventory</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .sidebar-logo {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #374151;
+        }
+
+        .sidebar-logo h3 {
+            color: #fff;
+            font-weight: 700;
+            margin: 10px 0 0 0;
+        }
+
+        .sidebar-logo i {
+            font-size: 3rem;
+            color: var(--primary);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar-menu li {
+            margin: 10px 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: #9ca3af;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background: var(--primary);
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .sidebar-menu i {
+            margin-right: 12px;
+            font-size: 1.2rem;
+            width: 25px;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .top-bar {
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-bell {
+            position: relative;
+            font-size: 1.5rem;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger);
+            color: #fff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .stats-card {
+            background: #fff;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stats-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .stats-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .stats-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .content-card {
+            background: #fff;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .badge-critical {
+            background: var(--danger);
+        }
+
+        .badge-warning {
+            background: var(--warning);
+        }
+
+        .badge-safe {
+            background: var(--success);
+        }
+
+        .badge-moderate {
+            background: var(--info);
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: #fff;
+        }
+
+        .btn-gradient:hover {
+            opacity: 0.9;
+            color: #fff;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: #fff;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding-left: 40px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-flask"></i>
+            <h3>Cosmetics IMS</h3>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="active" onclick="showSection('dashboard')"><i class="fas fa-home"></i> Dashboard</a></li>
+            <li><a href="#" onclick="showSection('products')"><i class="fas fa-box"></i> Products</a></li>
+            <li><a href="#" onclick="showSection('expiry')"><i class="fas fa-exclamation-triangle"></i> Near Expiry</a></li>
+            <li><a href="#" onclick="showSection('low-stock')"><i class="fas fa-chart-line"></i> Low Stock</a></li>
+            <li><a href="#" onclick="showSection('sales')"><i class="fas fa-tags"></i> Sales & Discounts</a></li>
+            <li><a href="#" onclick="showSection('orders')"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+            <li><a href="#" onclick="showSection('tickets')"><i class="fas fa-ticket-alt"></i> Tickets</a></li>
+            <li><a href="#" onclick="showSection('feedback')"><i class="fas fa-comments"></i> Feedback</a></li>
+            <li><a href="#" onclick="showSection('analytics')"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+            <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div>
+                <h2 class="mb-0">Welcome, Admin</h2>
+                <small class="text-muted">Expiry Aware Inventory Management System</small>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="notification-bell" onclick="showNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationCount">0</span>
+                </div>
+                <img src="https://via.placeholder.com/40" class="rounded-circle" alt="Admin">
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="section-content">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <i class="fas fa-box stats-icon text-primary"></i>
+                        <div class="stats-value" id="totalProducts">0</div>
+                        <div class="stats-label">Total Products</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <i class="fas fa-exclamation-circle stats-icon text-danger"></i>
+                        <div class="stats-value" id="expiringProducts">0</div>
+                        <div class="stats-label">Near Expiry</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <i class="fas fa-chart-line stats-icon text-warning"></i>
+                        <div class="stats-value" id="lowStockProducts">0</div>
+                        <div class="stats-label">Low Stock</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <i class="fas fa-rupee-sign stats-icon text-success"></i>
+                        <div class="stats-value" id="totalRevenue">0</div>
+                        <div class="stats-label">Total Revenue</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="content-card">
+                        <h4><i class="fas fa-chart-pie"></i> Category Distribution</h4>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="content-card">
+                        <h4><i class="fas fa-clock"></i> Expiry Trends</h4>
+                        <div class="chart-container">
+                            <canvas id="expiryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h4><i class="fas fa-star"></i> Top Selling Products</h4>
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Units Sold</th>
+                                <th>Revenue</th>
+                                <th>Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topProductsTable">
+                            <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div id="products-section" class="section-content" style="display:none;">
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4><i class="fas fa-box"></i> Product Management</h4>
+                    <button class="btn btn-gradient" onclick="showAddProductModal()">
+                        <i class="fas fa-plus"></i> Add New Product
+                    </button>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" class="form-control" id="productSearch" placeholder="Search products..." onkeyup="searchProducts()">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="categoryFilter" onchange="filterProducts()">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="stockFilter" onchange="filterProducts()">
+                            <option value="">All Stock Status</option>
+                            <option value="in_stock">In Stock</option>
+                            <option value="low_stock">Low Stock</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                                <th>Price</th>
+                                <th>Expiry</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTable">
+                            <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Near Expiry Section -->
+        <div id="expiry-section" class="section-content" style="display:none;">
+            <div class="content-card">
+                <h4><i class="fas fa-exclamation-triangle text-danger"></i> Near Expiry Products</h4>
+                <p class="text-muted">Products expiring within 90 days</p>
+
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                                <th>Expiry Date</th>
+                                <th>Days Left</th>
+                                <th>Risk Level</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expiryTable">
+                            <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Section -->
+        <div id="low-stock-section" class="section-content" style="display:none;">
+            <div class="content-card">
+                <h4><i class="fas fa-chart-line text-warning"></i> Low Stock Alert</h4>
+                <p class="text-muted">Products below reorder level</p>
+
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Current Stock</th>
+                                <th>Reorder Level</th>
+                                <th>Reorder Qty</th>
+                                <th>Supplier</th>
+                                <th>Lead Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lowStockTable">
+                            <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales & Discounts Section -->
+        <div id="sales-section" class="section-content" style="display:none;">
+            <div class="content-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4><i class="fas fa-tags"></i> Sales & Discount Management</h4>
+                    <button class="btn btn-gradient" onclick="showCreateSaleModal()">
+                        <i class="fas fa-plus"></i> Create Flash Sale
+                    </button>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h5>Active Flash Sales</h5>
+                        <div id="activeSalesList"></div>
+                    </div>
+                </div>
+
+                <h5>Products with Discounts</h5>
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th>Original Price</th>
+                                <th>Discount %</th>
+                                <th>Final Price</th>
+                                <th>Reason</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="discountTable">
+                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders Section -->
+        <div id="orders-section" class="section-content" style="display:none;">
+            <div class="content-card">
+                <h4><i class="fas fa-shopping-cart"></i> Order Management</h4>
+
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTable">
+                            <tr><td colspan="7" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tickets Section -->
+        <div id="tickets-section" class="section-content" style="display:none;">
+            <div class="content-card">
+                <h4><i class="fas fa-ticket-alt"></i> Customer Support Tickets</h4>
+
+                <div class="table-container">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ticket ID</th>
+                                <th>Customer</th>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticketsTable">
+                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Section -->
+        <div id="feedback-section" class="section-content" style="display:none;">
+            <div class="content-card">
+                <h4><i class="fas fa-comments"></i> Customer Feedback</h4>
+
+                <div id="feedbackList"></div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics-section" class="section-content" style="display:none;">
+            <div class="content-card">
+                <h4><i class="fas fa-chart-bar"></i> Advanced Analytics</h4>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Sales Trend (Last 30 Days)</h5>
+                        <div class="chart-container">
+                            <canvas id="salesTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Stock Turnover Ratio</h5>
+                        <div class="chart-container">
+                            <canvas id="turnoverChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <h5>Wastage Analysis</h5>
+                        <div class="chart-container">
+                            <canvas id="wastageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal fade" id="addProductModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Product</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addProductForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Product Name</label>
+                                <input type="text" class="form-control" name="Product_Name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Product ID</label>
+                                <input type="text" class="form-control" name="Product_ID" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" name="Category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Skincare">Skincare</option>
+                                    <option value="Makeup">Makeup</option>
+                                    <option value="Haircare">Haircare</option>
+                                    <option value="Fragrance">Fragrance</option>
+                                    <option value="Body Care">Body Care</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Brand</label>
+                                <input type="text" class="form-control" name="Brand" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Unit Cost (₹)</label>
+                                <input type="number" class="form-control" name="Unit_Cost" step="0.01" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Unit Price (₹)</label>
+                                <input type="number" class="form-control" name="Unit_Price" step="0.01" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" name="Quantity_in_Stock" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Reorder Level</label>
+                                <input type="number" class="form-control" name="Reorder_Level" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Manufacture Date</label>
+                                <input type="date" class="form-control" name="Manufacture_Date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Expiry Date</label>
+                                <input type="date" class="form-control" name="Expiry_Date" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-gradient" onclick="addProduct()">Add Product</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Sale Modal -->
+    <div class="modal fade" id="createSaleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Flash Sale</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createSaleForm">
+                        <div class="mb-3">
+                            <label class="form-label">Sale Title</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Discount Percentage</label>
+                            <input type="number" class="form-control" name="discount_percentage" min="1" max="100" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="datetime-local" class="form-control" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="datetime-local" class="form-control" name="end_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Select Products</label>
+                            <select class="form-select" name="products" multiple size="5" id="saleProductSelect">
+                                <option value="">Loading...</option>
+                            </select>
+                            <small class="text-muted">Hold Ctrl to select multiple products</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-gradient" onclick="createFlashSale()">Create Sale</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let authToken = localStorage.getItem('adminToken');
+
+        // Section Navigation
+        function showSection(sectionName) {
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionName + '-section').style.display = 'block';
+
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.closest('a').classList.add('active');
+
+            // Load data for specific section
+            if (sectionName === 'dashboard') loadDashboard();
+            else if (sectionName === 'products') loadProducts();
+            else if (sectionName === 'expiry') loadNearExpiry();
+            else if (sectionName === 'low-stock') loadLowStock();
+            else if (sectionName === 'sales') loadSalesData();
+            else if (sectionName === 'orders') loadOrders();
+            else if (sectionName === 'tickets') loadTickets();
+            else if (sectionName === 'feedback') loadFeedback();
+            else if (sectionName === 'analytics') loadAnalytics();
+        }
+
+        // API Helper
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            };
+
+            if (body) options.body = JSON.stringify(body);
+
+            try {
+                const response = await fetch(API_URL + endpoint, options);
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error);
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                alert('Error: ' + error.message);
+                return null;
+            }
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            const stats = await apiCall('/analytics/dashboard');
+            if (stats) {
+                document.getElementById('totalProducts').textContent = stats.totalProducts;
+                document.getElementById('expiringProducts').textContent = stats.expiringProducts;
+                document.getElementById('lowStockProducts').textContent = stats.lowStockProducts;
+                document.getElementById('totalRevenue').textContent = '₹' + stats.totalRevenue.toFixed(2);
+
+                // Top products table
+                let tableHTML = '';
+                stats.topSellingProducts.forEach(product => {
+                    tableHTML += `
+                        <tr>
+                            <td>${product.Product_Name}</td>
+                            <td>${product.Category}</td>
+                            <td>${product.Units_Sold_Last_Month}</td>
+                            <td>₹${(product.Units_Sold_Last_Month * product.Unit_Price).toFixed(2)}</td>
+                            <td>${product.Quantity_in_Stock}</td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('topProductsTable').innerHTML = tableHTML;
+
+                // Charts
+                renderCategoryChart(stats.categoryWiseStock);
+                renderExpiryChart(stats);
+            }
+        }
+
+        // Load Products
+        async function loadProducts() {
+            const products = await apiCall('/products');
+            if (products) {
+                let tableHTML = '';
+                products.forEach(product => {
+                    const expiryBadge = product.Days_to_Expiry <= 30 ? 'badge-critical' : 
+                                       product.Days_to_Expiry <= 90 ? 'badge-warning' : 'badge-safe';
+                    
+                    tableHTML += `
+                        <tr>
+                            <td>${product.Product_ID}</td>
+                            <td>${product.Product_Name}</td>
+                            <td>${product.Category}</td>
+                            <td>${product.Quantity_in_Stock}</td>
+                            <td>₹${product.Final_Price.toFixed(2)}</td>
+                            <td>${new Date(product.Expiry_Date).toLocaleDateString()}</td>
+                            <td><span class="badge ${expiryBadge}">${product.Days_to_Expiry} days</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="editProduct('${product.Product_ID}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.Product_ID}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('productsTable').innerHTML = tableHTML;
+
+                // Load categories for filter
+                const categories = await apiCall('/categories');
+                let categoryOptions = '<option value="">All Categories</option>';
+                categories.forEach(cat => {
+                    categoryOptions += `<option value="${cat}">${cat}</option>`;
+                });
+                document.getElementById('categoryFilter').innerHTML = categoryOptions;
+            }
+        }
+
+        // Load Near Expiry
+        async function loadNearExpiry() {
+            const products = await apiCall('/products');
+            const nearExpiry = products.filter(p => p.Days_to_Expiry <= 90 && p.Days_to_Expiry >= 0);
+            
+            let tableHTML = '';
+            nearExpiry.forEach(product => {
+                const riskLevel = product.Days_to_Expiry <= 7 ? 'CRITICAL' :
+                                 product.Days_to_Expiry <= 30 ? 'WARNING' : 'MODERATE';
+                const badgeClass = riskLevel === 'CRITICAL' ? 'badge-critical' :
+                                  riskLevel === 'WARNING' ? 'badge-warning' : 'badge-moderate';
+                
+                tableHTML += `
+                    <tr>
+                        <td>${product.Product_Name}</td>
+                        <td>${product.Category}</td>
+                        <td>${product.Quantity_in_Stock}</td>
+                        <td>${new Date(product.Expiry_Date).toLocaleDateString()}</td>
+                        <td>${product.Days_to_Expiry}</td>
+                        <td><span class="badge ${badgeClass}">${riskLevel}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" onclick="addToDiscount('${product.Product_ID}')">
+                                Add to Discount
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('expiryTable').innerHTML = tableHTML || '<tr><td colspan="7" class="text-center">No products near expiry</td></tr>';
+        }
+
+        // Chart Rendering
+        function renderCategoryChart(data) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.map(d => d._id),
+                    datasets: [{
+                        data: data.map(d => d.total_stock),
+                        backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function renderExpiryChart(stats) {
+            const ctx = document.getElementById('expiryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Expired', 'Critical', 'Warning', 'Safe'],
+                    datasets: [{
+                        label: 'Products',
+                        data: [stats.expiredProducts, stats.expiringProducts, 0, stats.totalProducts - stats.expiredProducts - stats.expiringProducts],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Modals
+        function showAddProductModal() {
+            new bootstrap.Modal(document.getElementById('addProductModal')).show();
+        }
+
+        function showCreateSaleModal() {
+            new bootstrap.Modal(document.getElementById('createSaleModal')).show();
+            loadProductsForSale();
+        }
+
+        async function loadProductsForSale() {
+            const products = await apiCall('/products');
+            let options = '';
+            products.forEach(p => {
+                options += `<option value="${p.Product_ID}">${p.Product_Name}</option>`;
+            });
+            document.getElementById('saleProductSelect').innerHTML = options;
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('adminToken');
+            window.location.href = '/login.html';
+        }
+
+        // Initialize
+        window.onload = function() {
+            if (!authToken) {
+                window.location.href = '/login.html';
+                return;
+            }
+            loadDashboard();
+        };
+    </script>
+</body>
+</html>

@@ -1,13 +1,447 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Cosmetics Inventory System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+        }
+
+        .auth-left {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-left h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .auth-left p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .auth-left i {
+            font-size: 5rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .auth-right {
+            flex: 1;
+            padding: 60px 40px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .auth-tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .auth-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            padding: 12px 15px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        }
+
+        .btn-auth {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            transition: transform 0.3s;
+        }
+
+        .btn-auth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .role-option {
+            flex: 1;
+            padding: 20px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .role-option:hover {
+            border-color: #667eea;
+        }
+
+        .role-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .role-option i {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .alert {
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+
+        @media (max-width: 768px) {
+            .auth-container {
+                flex-direction: column;
+            }
+
+            .auth-left {
+                padding: 40px 30px;
+            }
+
+            .auth-right {
+                padding: 40px 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-left">
+            <i class="fas fa-flask"></i>
+            <h1>Cosmetics IMS</h1>
+            <p>Expiry Aware Inventory Management System</p>
+            <p>Intelligent tracking, predictive analytics, and automated management for your cosmetics inventory.</p>
+        </div>
+
+        <div class="auth-right">
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="showTab('login')">Login</div>
+                <div class="auth-tab" onclick="showTab('register')">Register</div>
+            </div>
+
+            <div id="alertBox"></div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <h3 class="mb-4">Welcome Back</h3>
+
+                <div class="role-selector">
+                    <div class="role-option selected" data-role="customer">
+                        <i class="fas fa-user"></i>
+                        <div>Customer</div>
+                    </div>
+                    <div class="role-option" data-role="admin">
+                        <i class="fas fa-user-shield"></i>
+                        <div>Admin</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="loginEmail" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="loginPassword" required>
+                </div>
+
+                <button type="submit" class="btn btn-auth">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form">
+                <h3 class="mb-4">Create Account</h3>
+
+                <div class="role-selector">
+                    <div class="role-option selected" data-role="customer">
+                        <i class="fas fa-user"></i>
+                        <div>Customer</div>
+                    </div>
+                    <div class="role-option" data-role="admin">
+                        <i class="fas fa-user-shield"></i>
+                        <div>Admin</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="registerName" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="registerEmail" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="registerPassword" required>
+                </div>
+
+                <div class="mb-3" id="phoneField">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="registerPhone">
+                </div>
+
+                <div class="mb-3" id="addressField">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-control" id="registerAddress" rows="2"></textarea>
+                </div>
+
+                <div class="mb-3" id="secretCodeField" style="display:none;">
+                    <label class="form-label">Admin Secret Code</label>
+                    <input type="password" class="form-control" id="registerSecretCode">
+                    <small class="text-muted">Required for admin registration</small>
+                </div>
+
+                <button type="submit" class="btn btn-auth">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let selectedLoginRole = 'customer';
+        let selectedRegisterRole = 'customer';
+
+        // Tab switching
+        function showTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Form').classList.add('active');
+            
+            clearAlert();
+        }
+
+        // Role selection for login
+        document.querySelectorAll('#loginForm .role-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('#loginForm .role-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedLoginRole = this.dataset.role;
+            });
+        });
+
+        // Role selection for register
+        document.querySelectorAll('#registerForm .role-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('#registerForm .role-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedRegisterRole = this.dataset.role;
+                
+                // Show/hide fields based on role
+                if (selectedRegisterRole === 'admin') {
+                    document.getElementById('phoneField').style.display = 'none';
+                    document.getElementById('addressField').style.display = 'none';
+                    document.getElementById('secretCodeField').style.display = 'block';
+                } else {
+                    document.getElementById('phoneField').style.display = 'block';
+                    document.getElementById('addressField').style.display = 'block';
+                    document.getElementById('secretCodeField').style.display = 'none';
+                }
+            });
+        });
+
+        // Show alert
+        function showAlert(message, type = 'success') {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        function clearAlert() {
+            document.getElementById('alertBox').innerHTML = '';
+        }
+
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const role = selectedLoginRole;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, role })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Save token and user info
+                    if (role === 'admin') {
+                        localStorage.setItem('adminToken', data.token);
+                        localStorage.setItem('adminUser', JSON.stringify(data.user));
+                        showAlert('Login successful! Redirecting to dashboard...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/admin-dashboard.html';
+                        }, 1500);
+                    } else {
+                        localStorage.setItem('customerToken', data.token);
+                        localStorage.setItem('customerUser', JSON.stringify(data.user));
+                        showAlert('Login successful! Redirecting to store...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/customer-store.html';
+                        }, 1500);
+                    }
+                } else {
+                    showAlert(data.error || 'Login failed', 'danger');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('Connection error. Please try again.', 'danger');
+            }
+        });
+
+        // Register form submission
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const role = selectedRegisterRole;
+
+            let requestBody = { fullName, email, password };
+
+            if (role === 'customer') {
+                requestBody.phone = document.getElementById('registerPhone').value;
+                requestBody.address = document.getElementById('registerAddress').value;
+            } else {
+                requestBody.secretCode = document.getElementById('registerSecretCode').value;
+            }
+
+            try {
+                const endpoint = role === 'admin' ? '/auth/register/admin' : '/auth/register/customer';
+                
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('Registration successful! Please login.', 'success');
+                    
+                    // Clear form
+                    document.getElementById('registerForm').reset();
+                    
+                    // Switch to login tab
+                    setTimeout(() => {
+                        showTab('login');
+                    }, 2000);
+                } else {
+                    showAlert(data.error || 'Registration failed', 'danger');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('Connection error. Please try again.', 'danger');
+            }
+        });
+
+        // Password strength indicator (optional enhancement)
+        document.getElementById('registerPassword').addEventListener('input', function() {
+            const password = this.value;
+            const strength = calculatePasswordStrength(password);
+            // You can add a visual indicator here
+        });
+
+        function calculatePasswordStrength(password) {
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/\d/.test(password)) strength++;
+            if (/[^a-zA-Z\d]/.test(password)) strength++;
+            return strength;
+        }
+    </script>
+</body>
 </html>
