@@ -1,15 +1,14 @@
 import numpy as np
 import pandas as pd
+import os
 import pickle
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, confusion_matrix, classification_report,
-                             roc_auc_score, mean_absolute_error, r2_score)
+                             roc_auc_score)
 from sklearn.model_selection import cross_val_score, GridSearchCV
 import xgboost as xgb
-import matplotlib.pyplot as plt
-import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -19,10 +18,10 @@ print("="*80)
 
 # STEP 1: Load Training Data
 print("\n[1] Loading Training Data...")
-X_train = np.load('X_train.npy')
-X_test = np.load('X_test.npy')
-y_train = np.load('y_train.npy')
-y_test = np.load('y_test.npy')
+X_train = np.load(r"C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Data\X_train.npy")
+X_test = np.load(r"C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Data\X_test.npy")
+y_train = np.load(r"C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Data\y_train.npy")
+y_test = np.load(r"C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Data\y_test.npy")
 
 print(f"   ✓ Training samples: {X_train.shape[0]}")
 print(f"   ✓ Testing samples: {X_test.shape[0]}")
@@ -89,6 +88,8 @@ print(f"   - CV Mean: {results[best_model_name]['cv_mean']:.4f} (+/- {results[be
 # STEP 4: Hyperparameter Tuning for Best Model
 print("\n[4] Hyperparameter Tuning...")
 
+tuned_model = best_model  # default
+
 if best_model_name == 'Random Forest':
     param_grid = {
         'n_estimators': [100, 200],
@@ -106,15 +107,17 @@ elif best_model_name == 'XGBoost':
     }
     base_model = xgb.XGBClassifier(random_state=42, eval_metric='logloss')
 else:
-    param_grid = {'n_estimators': [100, 200]}
+    param_grid = None  # No tuning for Logistic Regression
     base_model = best_model
 
-print(f"   Tuning {best_model_name} with GridSearchCV...")
-grid_search = GridSearchCV(base_model, param_grid, cv=3, scoring='f1', n_jobs=-1, verbose=0)
-grid_search.fit(X_train, y_train)
-
-tuned_model = grid_search.best_estimator_
-print(f"   ✓ Best Parameters: {grid_search.best_params_}")
+if param_grid:
+    print(f"   Tuning {best_model_name} with GridSearchCV...")
+    grid_search = GridSearchCV(base_model, param_grid, cv=3, scoring='f1', n_jobs=-1, verbose=0)
+    grid_search.fit(X_train, y_train)
+    tuned_model = grid_search.best_estimator_
+    print(f"   ✓ Best Parameters: {grid_search.best_params_}")
+else:
+    print(f"   ✓ No hyperparameter tuning required for {best_model_name}")
 
 # Re-evaluate tuned model
 y_pred_tuned = tuned_model.predict(X_test)
@@ -157,16 +160,19 @@ print(classification_report(y_test, y_pred_tuned, target_names=['Not Expired', '
 
 # STEP 8: Save Model and Artifacts
 print("\n[8] Saving Model and Artifacts...")
+save1_dir = r"C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Model"
+os.makedirs(save1_dir, exist_ok=True)
 
 # Save the tuned model
-with open('expiry_prediction_model.pkl', 'wb') as f:
+model_path = os.path.join(save1_dir, 'expiry_prediction_model.pkl')
+with open(model_path, 'wb') as f:
     pickle.dump(tuned_model, f)
 print("   ✓ Saved model as 'expiry_prediction_model.pkl'")
 
 # Save model metadata
 model_metadata = {
     'model_name': best_model_name,
-    'best_params': grid_search.best_params_,
+    'best_params': grid_search.best_params_ if param_grid else None,
     'accuracy': tuned_accuracy,
     'precision': precision_score(y_test, y_pred_tuned),
     'recall': recall_score(y_test, y_pred_tuned),
@@ -177,7 +183,8 @@ model_metadata = {
     'features': X_train.shape[1]
 }
 
-with open('model_metadata.pkl', 'wb') as f:
+metadata_path = os.path.join(save1_dir, 'model_metadata.pkl')
+with open(metadata_path, 'wb') as f:
     pickle.dump(model_metadata, f)
 print("   ✓ Saved model metadata")
 
@@ -185,7 +192,8 @@ print("   ✓ Saved model metadata")
 feature_names_list = ['Quantity_in_Stock', 'Days_to_Expiry', 'Units_Sold_Last_Month', 
                       'Age_of_Stock_Days', 'Profit_Margin', 'Stock_Turnover_Ratio',
                       'Expiry_Risk_Encoded', 'Stock_Age_Encoded']
-with open('feature_names.pkl', 'wb') as f:
+features_path = os.path.join(save1_dir, 'feature_names.pkl')
+with open(features_path, 'wb') as f:
     pickle.dump(feature_names_list, f)
 print("   ✓ Saved feature names")
 
@@ -195,12 +203,10 @@ print("\n" + "="*80)
 print(f"{'Model':<25} {'Accuracy':<12} {'Precision':<12} {'Recall':<12} {'F1-Score':<12}")
 print("="*80)
 for name, res in results.items():
-    print(f"{name:<25} {res['accuracy']:<12.4f} {res['precision']:<12.4f} "
-          f"{res['recall']:<12.4f} {res['f1']:<12.4f}")
+    print(f"{name:<25} {res['accuracy']:<12.4f} {res['precision']:<12.4f} {res['recall']:<12.4f} {res['f1']:<12.4f}")
 print("="*80)
 
-print("\n" + "="*80)
-print("MODEL TRAINING COMPLETED SUCCESSFULLY")
+print("\n✓ TRAINING & EVALUATION COMPLETE ✓")
 print("="*80)
 print(f"✓ Best Model: {best_model_name}")
 print(f"✓ Final Accuracy: {tuned_accuracy:.4f}")

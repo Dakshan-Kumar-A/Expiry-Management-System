@@ -111,7 +111,6 @@ for col in outlier_cols:
 # STEP 6: Feature Engineering
 print("\n[6] Feature Engineering...")
 
-# Create new meaningful columns
 df['Expiry_Risk_Level'] = df['Days_to_Expiry'].apply(
     lambda x: 'Critical' if x <= 30 else ('Warning' if x <= 90 else ('Moderate' if x <= 180 else 'Safe'))
 )
@@ -140,7 +139,6 @@ print("   ✓ Created Reorder_Required flag")
 # STEP 7: Handling Categorical Data
 print("\n[7] Encoding Categorical Data...")
 
-# Label Encoding for ordinal data
 le_risk = LabelEncoder()
 df['Expiry_Risk_Encoded'] = le_risk.fit_transform(df['Expiry_Risk_Level'])
 print(f"   ✓ Label encoded Expiry_Risk_Level: {dict(zip(le_risk.classes_, le_risk.transform(le_risk.classes_)))}")
@@ -149,7 +147,6 @@ le_stock_age = LabelEncoder()
 df['Stock_Age_Encoded'] = le_stock_age.fit_transform(df['Stock_Age_Category'])
 print(f"   ✓ Label encoded Stock_Age_Category")
 
-# One-Hot Encoding for nominal data
 df_encoded = pd.get_dummies(df, columns=['Category', 'Stock_Status'], prefix=['Cat', 'Status'])
 print(f"   ✓ One-hot encoded Category and Stock_Status")
 
@@ -166,8 +163,7 @@ for col in scale_cols:
 
 # STEP 9: Remove Irrelevant Columns
 print("\n[9] Removing Irrelevant Columns...")
-# Keep original data but mark columns for analysis
-irrelevant_cols = ['Product_Name', 'Supplier_Name']  # Keep for reference but not for ML
+irrelevant_cols = ['Product_Name', 'Supplier_Name']
 print(f"   ✓ Identified irrelevant columns for ML: {irrelevant_cols}")
 
 # STEP 10: Data Balancing (for ML classification)
@@ -175,22 +171,24 @@ print("\n[10] Data Balancing...")
 print(f"   Class distribution for Is_Expired:")
 print(df_encoded['Is_Expired'].value_counts())
 
-# Prepare features for SMOTE
 ml_features = ['Quantity_in_Stock', 'Days_to_Expiry', 'Units_Sold_Last_Month',
                'Age_of_Stock_Days', 'Profit_Margin', 'Stock_Turnover_Ratio',
                'Expiry_Risk_Encoded', 'Stock_Age_Encoded']
 
-# Check if features exist
 ml_features = [f for f in ml_features if f in df_encoded.columns]
 
 X = df_encoded[ml_features]
 y = df_encoded['Is_Expired'].astype(int)
 
-# Apply SMOTE
-smote = SMOTE(random_state=42)
-X_balanced, y_balanced = smote.fit_resample(X, y)
-print(f"   ✓ Applied SMOTE")
-print(f"   After balancing: {pd.Series(y_balanced).value_counts().to_dict()}")
+# ✅ FIXED SMOTE ERROR HANDLING
+if y.nunique() > 1:
+    smote = SMOTE(random_state=42)
+    X_balanced, y_balanced = smote.fit_resample(X, y)
+    print(f"   ✓ Applied SMOTE")
+    print(f"   After balancing: {pd.Series(y_balanced).value_counts().to_dict()}")
+else:
+    X_balanced, y_balanced = X, y
+    print("   ⚠ SMOTE skipped — only one class found in target variable.")
 
 # STEP 11: Train-Test Split
 print("\n[11] Train-Test Split...")
@@ -203,37 +201,38 @@ print(f"   ✓ Testing set: {X_test.shape}")
 # STEP 12: Save Processed Data
 print("\n[12] Saving Processed Data...")
 
-# Save to CSV
-df_encoded.to_csv('Data/processed_data.csv', index=False)
+df_encoded.to_csv(r'C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Data\processed_data.csv', index=False)
 print("   ✓ Saved to processed_data.csv")
 
-# Save to MongoDB
 try:
     processed_collection.delete_many({})
-    
-    # Convert datetime to string for MongoDB
     df_mongo = df_encoded.copy()
     for col in df_mongo.select_dtypes(include=['datetime64']).columns:
         df_mongo[col] = df_mongo[col].astype(str)
-    
     records = df_mongo.to_dict('records')
     processed_collection.insert_many(records)
     print(f"   ✓ Saved {len(records)} records to MongoDB collection 'processed_data'")
 except Exception as e:
     print(f"   ⚠ MongoDB save failed: {e}")
 
-# Save train-test split
-np.save('X_train.npy', X_train)
-np.save('X_test.npy', X_test)
-np.save('y_train.npy', y_train)
-np.save('y_test.npy', y_test)
+import os
+save_dir = r"C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Data"
+os.makedirs(save_dir, exist_ok=True)
+
+np.save(os.path.join(save_dir, "X_train.npy"), X_train)
+np.save(os.path.join(save_dir, "X_test.npy"), X_test)
+np.save(os.path.join(save_dir, "y_train.npy"), y_train)
+np.save(os.path.join(save_dir, "y_test.npy"), y_test)
 print("   ✓ Saved train-test split data")
 
-# Save encoders
 import pickle
-with open('label_encoders.pkl', 'wb') as f:
+save1_dir = r"C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Model"
+# Folder where .npy files are stored
+os.makedirs(save1_dir, exist_ok=True)
+# Save the encoders in the same folder
+with open(os.path.join(save1_dir, 'label_encoders.pkl'), 'wb') as f:
     pickle.dump({'risk': le_risk, 'stock_age': le_stock_age}, f)
-print("   ✓ Saved label encoders")
+print(f"   ✓ Saved label encoders to {os.path.join(save1_dir, 'label_encoders.pkl')}")
 
 print("\n" + "="*70)
 print("PREPROCESSING COMPLETED SUCCESSFULLY")

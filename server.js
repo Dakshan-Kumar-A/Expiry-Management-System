@@ -851,7 +851,7 @@ app.post('/api/predict-expiry', authenticateToken, adminOnly, async (req, res) =
     const productData = req.body;
 
     // Call Python prediction script
-    const python = spawn('python', ['prediction_script.py', JSON.stringify(productData)]);
+    const python = spawn('python', ['predictor.py', JSON.stringify(productData)]);
 
     let result = '';
     python.stdout.on('data', (data) => {

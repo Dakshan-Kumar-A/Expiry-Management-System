@@ -86,7 +86,13 @@ for i in range(5000):
     manufacture_date = datetime.now() - timedelta(days=random.randint(0, shelf_life//2))
     expiry_date = manufacture_date + timedelta(days=shelf_life)
     days_to_expiry = (expiry_date - datetime.now()).days
-    is_expired = days_to_expiry < 0
+
+    # Ensure two classes: some items expired, some not
+    if i < 50:  # Force first 50 records to be expired
+        is_expired = True
+        days_to_expiry = -random.randint(1, 30)  # Negative days to expiry
+    else:
+        is_expired = days_to_expiry < 0
     
     # Sales Info
     units_sold = random.randint(0, 100)
@@ -139,7 +145,7 @@ for i in range(5000):
 df = pd.DataFrame(data)
 
 # Save to Excel
-excel_filename = 'Data/cosmetics_raw_data.xlsx'
+excel_filename = r'C:\Users\maind\OneDrive\Desktop\Codes\DWDM\Expiry Management System\Data\cosmetics_raw_data.xlsx'
 df.to_excel(excel_filename, index=False)
 print(f"✓ Dataset saved to {excel_filename}")
 
